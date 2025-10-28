@@ -6,13 +6,12 @@
 //
 
 import Foundation
-import SwiftData
 
-@Model
-class Wish {
-  var title: String
-  
-  init(title: String) {
-    self.title = title
-  }
+struct Wish: Identifiable, Equatable {
+    var id = UUID().uuidString
+    var title: String
+    
+    init(title: String) {
+        self.title = title
+    }
 }

@@ -7,28 +7,63 @@
 
 import Foundation
 import SwiftData
-import Combine
 
-@MainActor
-final class HomeViewModel: ObservableObject {
-    @Published var isAlertShowing = false
-    @Published var title = ""
-
-    func addWish(using context: ModelContext) {
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.isEmpty == false else { return }
-        context.insert(Wish(title: trimmed))
-        title = ""
+@Observable
+final class HomeViewModel {
+    var isAlertShowing = false
+    var title = ""
+    var wishes: [Wish] = []
+    
+    private let wishRepository: WishRepository
+    
+    init(wishRepository: WishRepository) {
+        self.wishRepository = wishRepository
     }
-
-    func delete(_ wish: Wish, using context: ModelContext) {
-        context.delete(wish)
+    
+    func fetchWishes() {
+        self.wishes = wishRepository.fetchWishes()
+    }
+    
+    func addWish() {
+        let wish: Wish = Wish(title: title)
+        wishRepository.insert(wish)
+        
+        fetchWishes()
+        self.title = ""
+    }
+    
+    func deleteWish(_ wish: Wish) {
+        wishRepository.delete(wish)
+        
+        fetchWishes()
     }
 
     // MARK: - Helpers for View
-    func hasWishes(_ wishes: [Wish]) -> Bool { !wishes.isEmpty }
+    func hasWishes() -> Bool { !wishes.isEmpty }
 
-    func counterText(for wishes: [Wish]) -> String {
+    func counterText() -> String {
         "\(wishes.count) wish\(wishes.count > 1 ? "es" : "")"
+    }
+}
+
+protocol WishRepository {
+    func fetchWishes() -> [Wish]
+    func insert(_ wish: Wish)
+    func delete(_ wish: Wish)
+}
+
+class InMemoryWishRepository: WishRepository {
+    private var storage: [Wish] = []
+    
+    func fetchWishes() -> [Wish] { storage }
+    
+    func insert(_ wish: Wish) {
+        storage.append(wish)
+    }
+    
+    func delete(_ wish: Wish) {
+        if let index = storage.firstIndex(of: wish) {
+            storage.remove(at: index)
+        }
     }
 }

@@ -6,14 +6,12 @@
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct WishlistApp: App {
   var body: some Scene {
     WindowGroup {
       HomeView()
-        .modelContainer(for: Wish.self)
     }
   }
 }

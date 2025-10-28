@@ -6,24 +6,20 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct HomeView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var wishes: [Wish]
+    @State private var viewModel: HomeViewModel = HomeViewModel(wishRepository: InMemoryWishRepository())
     
-    @StateObject private var viewModel = HomeViewModel()
-
     var body: some View {
         NavigationStack {
             List {
-                ForEach(wishes) { wish in
+                ForEach(viewModel.wishes) { wish in
                     Text(wish.title)
                         .font(.title.weight(.light))
                         .padding(.vertical, 2)
                         .swipeActions {
                             Button("Delete", role: .destructive) {
-                                viewModel.delete(wish, using: modelContext)
+                                viewModel.deleteWish(wish)
                             }
                         }
                 }
@@ -34,25 +30,28 @@ struct HomeView: View {
                     Button { viewModel.isAlertShowing.toggle() } label: {
                         Image(systemName: "plus").imageScale(.large)
                     }
+                    .accessibilityIdentifier("addButton")
                 }
-
-                if viewModel.hasWishes(wishes) {
+                
+                if viewModel.hasWishes() {
                     ToolbarItem(placement: .bottomBar) {
-                        Text(viewModel.counterText(for: wishes))
+                        Text(viewModel.counterText())
                     }
                 }
             }
             .alert("Create a new wish", isPresented: $viewModel.isAlertShowing) {
                 TextField("Enter a wish", text: $viewModel.title)
-                Button("Save") { viewModel.addWish(using: modelContext) }
+                Button("Save") { viewModel.addWish() }
             }
             .overlay {
-                if wishes.isEmpty {
+                if viewModel.wishes.isEmpty {
                     ContentUnavailableView(
                         "My Wishlist",
                         systemImage: "heart.circle",
                         description: Text("No wishes yet. Add one to get started.")
                     )
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("emptyState")
                 }
             }
         }
